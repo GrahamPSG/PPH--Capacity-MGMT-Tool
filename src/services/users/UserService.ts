@@ -1,5 +1,5 @@
 import prisma from '@/lib/prisma/client';
-import { User, UserRole, Division, Prisma } from '@prisma/client';
+import { UserRole, Division, Prisma } from '@prisma/client';
 import { UserValidator } from './UserValidator';
 
 export interface CreateUserInput {

@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { UserService } from '@/services/users/UserService';
-import { requireManager } from '@/lib/auth/middleware';
 import { getUserSession } from '@/lib/auth/session';
 import { UserRole, Division } from '@prisma/client';
 
