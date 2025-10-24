@@ -1,0 +1,482 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ==========================================
+// USER & AUTHENTICATION
+// ==========================================
+
+model User {
+  id             String     @id @default(uuid())
+  email          String     @unique
+  firstName      String     @map("first_name")
+  lastName       String     @map("last_name")
+  role           UserRole
+  divisionAccess Division[] @map("division_access")
+  phoneNumber    String?    @map("phone_number")
+  auth0Id        String     @unique @map("auth0_id")
+  createdAt      DateTime   @default(now()) @map("created_at")
+  updatedAt      DateTime   @updatedAt @map("updated_at")
+  lastLoginAt    DateTime?  @map("last_login_at")
+  isActive       Boolean    @default(true) @map("is_active")
+
+  // Relations
+  createdProjects  Project[]        @relation("ProjectCreator")
+  modifiedProjects Project[]        @relation("ProjectModifier")
+  alerts           Alert[]          @relation("UserAlerts")
+  resolvedAlerts   Alert[]          @relation("AlertResolver")
+  auditLogs        AuditLog[]
+  assignments      CrewAssignment[] @relation("AssignmentCreator")
+  expenses         ProjectExpense[] @relation("ExpenseCreator")
+  approvedExpenses ProjectExpense[] @relation("ExpenseApprover")
+  syncJobs         MondaySync[]
+
+  @@index([email])
+  @@index([auth0Id])
+  @@index([role])
+  @@map("users")
+}
+
+enum UserRole {
+  OWNER
+  MANAGER
+  PROJECT_MANAGER
+  FOREMAN
+  READ_ONLY
+}
+
+// ==========================================
+// EMPLOYEE MANAGEMENT
+// ==========================================
+
+model Employee {
+  id               String       @id @default(uuid())
+  employeeCode     String       @unique @map("employee_code")
+  firstName        String       @map("first_name")
+  lastName         String       @map("last_name")
+  division         Division
+  employeeType     EmployeeType @map("employee_type")
+  hourlyRate       Decimal      @map("hourly_rate") @db.Decimal(10, 2)
+  overtimeRate     Decimal      @map("overtime_rate") @db.Decimal(10, 2)
+  maxHoursPerWeek  Int          @default(40) @map("max_hours_per_week")
+  skills           String[]
+  certifications   String[]
+  availabilityStart DateTime    @map("availability_start")
+  availabilityEnd   DateTime?   @map("availability_end")
+  isActive         Boolean      @default(true) @map("is_active")
+  createdAt        DateTime     @default(now()) @map("created_at")
+  updatedAt        DateTime     @updatedAt @map("updated_at")
+
+  // Relations
+  assignments      CrewAssignment[]
+  foremanProjects  Project[]
+
+  @@index([division])
+  @@index([employeeType])
+  @@index([isActive])
+  @@map("employees")
+}
+
+enum Division {
+  PLUMBING_MULTIFAMILY
+  PLUMBING_COMMERCIAL
+  PLUMBING_CUSTOM
+  HVAC_MULTIFAMILY
+  HVAC_COMMERCIAL
+  HVAC_CUSTOM
+}
+
+enum EmployeeType {
+  FOREMAN
+  JOURNEYMAN
+  APPRENTICE
+}
+
+// ==========================================
+// PROJECT MANAGEMENT
+// ==========================================
+
+model Project {
+  id               String        @id @default(uuid())
+  projectCode      String        @unique @map("project_code")
+  name             String
+  type             ProjectType
+  division         Division
+  status           ProjectStatus
+  contractAmount   Decimal       @map("contract_amount") @db.Decimal(12, 2)
+  startDate        DateTime      @map("start_date")
+  endDate          DateTime      @map("end_date")
+  actualStartDate  DateTime?     @map("actual_start_date")
+  actualEndDate    DateTime?     @map("actual_end_date")
+  foremanId        String?       @map("foreman_id")
+  crewSize         Int           @default(0) @map("crew_size")
+  address          String?
+  clientName       String        @map("client_name")
+  clientContact    String?       @map("client_contact")
+  mondayBoardId    String?       @map("monday_board_id")
+  mondayItemId     String?       @map("monday_item_id")
+  lastMondaySync   DateTime?     @map("last_monday_sync")
+  notes            String?       @db.Text
+  createdAt        DateTime      @default(now()) @map("created_at")
+  updatedAt        DateTime      @updatedAt @map("updated_at")
+  createdById      String        @map("created_by_id")
+  modifiedById     String        @map("modified_by_id")
+
+  // Relations
+  foreman          Employee?         @relation(fields: [foremanId], references: [id], onDelete: SetNull)
+  createdBy        User              @relation("ProjectCreator", fields: [createdById], references: [id])
+  modifiedBy       User              @relation("ProjectModifier", fields: [modifiedById], references: [id])
+  phases           ProjectPhase[]
+  scheduleOfValues ScheduleOfValues[]
+  expenses         ProjectExpense[]
+  alerts           Alert[]
+  syncJobs         MondaySync[]
+
+  @@index([division])
+  @@index([status])
+  @@index([foremanId])
+  @@index([mondayBoardId, mondayItemId])
+  @@map("projects")
+}
+
+enum ProjectType {
+  MULTIFAMILY
+  COMMERCIAL
+  CUSTOM_HOME
+}
+
+enum ProjectStatus {
+  QUOTED
+  AWARDED
+  IN_PROGRESS
+  ON_HOLD
+  COMPLETED
+  CANCELLED
+}
+
+model ProjectPhase {
+  id                  String      @id @default(uuid())
+  projectId           String      @map("project_id")
+  phaseNumber         Int         @map("phase_number")
+  name                String
+  division            Division
+  startDate           DateTime    @map("start_date")
+  endDate             DateTime    @map("end_date")
+  actualStartDate     DateTime?   @map("actual_start_date")
+  actualEndDate       DateTime?   @map("actual_end_date")
+  duration            Int         // in days
+  progressPercentage  Int         @default(0) @map("progress_percentage")
+  requiredCrewSize    Int         @default(0) @map("required_crew_size")
+  requiredForeman     Boolean     @default(false) @map("required_foreman")
+  requiredJourneymen  Int         @default(0) @map("required_journeymen")
+  requiredApprentices Int         @default(0) @map("required_apprentices")
+  laborHours          Int         @default(0) @map("labor_hours")
+  status              PhaseStatus @default(NOT_STARTED)
+  dependencies        String[]    // Array of phase IDs
+  mondayGroupId       String?     @map("monday_group_id")
+  lastUpdated         DateTime    @default(now()) @map("last_updated")
+  updatedBy           String      @map("updated_by")
+
+  // Relations
+  project         Project          @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  assignments     CrewAssignment[]
+  expenses        ProjectExpense[]
+  alerts          Alert[]
+
+  @@unique([projectId, phaseNumber])
+  @@index([projectId])
+  @@index([status])
+  @@index([division])
+  @@map("project_phases")
+}
+
+enum PhaseStatus {
+  NOT_STARTED
+  IN_PROGRESS
+  COMPLETED
+  DELAYED
+  BLOCKED
+}
+
+// ==========================================
+// CREW MANAGEMENT
+// ==========================================
+
+model CrewAssignment {
+  id                String       @id @default(uuid())
+  phaseId           String       @map("phase_id")
+  employeeId        String       @map("employee_id")
+  assignmentDate    DateTime     @map("assignment_date")
+  hoursAllocated    Int          @map("hours_allocated")
+  actualHoursWorked Int?         @map("actual_hours_worked")
+  role              EmployeeType
+  isLead            Boolean      @default(false) @map("is_lead")
+  notes             String?      @db.Text
+  createdAt         DateTime     @default(now()) @map("created_at")
+  createdBy         String       @map("created_by")
+
+  // Relations
+  phase    ProjectPhase @relation(fields: [phaseId], references: [id], onDelete: Cascade)
+  employee Employee     @relation(fields: [employeeId], references: [id])
+  creator  User         @relation("AssignmentCreator", fields: [createdBy], references: [id])
+
+  @@unique([phaseId, employeeId, assignmentDate])
+  @@index([phaseId])
+  @@index([employeeId])
+  @@index([assignmentDate])
+  @@map("crew_assignments")
+}
+
+// ==========================================
+// FINANCIAL MANAGEMENT
+// ==========================================
+
+model ScheduleOfValues {
+  id                 String        @id @default(uuid())
+  projectId          String        @map("project_id")
+  lineNumber         Int           @map("line_number")
+  description        String
+  value              Decimal       @db.Decimal(12, 2)
+  billingPercentage  Int           @default(0) @map("billing_percentage")
+  billingDate        DateTime      @map("billing_date")
+  actualBillingDate  DateTime?     @map("actual_billing_date")
+  invoiceNumber      String?       @map("invoice_number")
+  status             BillingStatus @default(SCHEDULED)
+  notes              String?       @db.Text
+  createdAt          DateTime      @default(now()) @map("created_at")
+  updatedAt          DateTime      @updatedAt @map("updated_at")
+
+  // Relations
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@unique([projectId, lineNumber])
+  @@index([projectId])
+  @@index([status])
+  @@index([billingDate])
+  @@map("schedule_of_values")
+}
+
+enum BillingStatus {
+  SCHEDULED
+  INVOICED
+  PAID
+  OVERDUE
+  DISPUTED
+}
+
+model ProjectExpense {
+  id            String           @id @default(uuid())
+  projectId     String           @map("project_id")
+  phaseId       String?          @map("phase_id")
+  category      ExpenseCategory
+  description   String
+  amount        Decimal          @db.Decimal(12, 2)
+  date          DateTime
+  vendorName    String?          @map("vendor_name")
+  invoiceNumber String?          @map("invoice_number")
+  approvedBy    String?          @map("approved_by")
+  attachmentUrl String?          @map("attachment_url")
+  createdAt     DateTime         @default(now()) @map("created_at")
+  createdBy     String           @map("created_by")
+
+  // Relations
+  project  Project       @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  phase    ProjectPhase? @relation(fields: [phaseId], references: [id], onDelete: SetNull)
+  creator  User          @relation("ExpenseCreator", fields: [createdBy], references: [id])
+  approver User?         @relation("ExpenseApprover", fields: [approvedBy], references: [id])
+
+  @@index([projectId])
+  @@index([phaseId])
+  @@index([category])
+  @@index([date])
+  @@map("project_expenses")
+}
+
+enum ExpenseCategory {
+  LABOR
+  MATERIALS
+  EQUIPMENT
+  SUBCONTRACTOR
+  OTHER
+}
+
+// ==========================================
+// CAPACITY ANALYTICS
+// ==========================================
+
+model CapacitySnapshot {
+  id                    String   @id @default(uuid())
+  date                  DateTime @db.Date
+  division              Division
+  totalEmployees        Int      @map("total_employees")
+  availableHours        Int      @map("available_hours")
+  scheduledHours        Int      @map("scheduled_hours")
+  utilizationPercentage Int      @map("utilization_percentage")
+  foremanCount          Int      @map("foreman_count")
+  journeymanCount       Int      @map("journeyman_count")
+  apprenticeCount       Int      @map("apprentice_count")
+  projectCount          Int      @map("project_count")
+  criticalProjects      String[] @map("critical_projects") // Project IDs
+  generatedAt           DateTime @default(now()) @map("generated_at")
+
+  @@unique([date, division])
+  @@index([date])
+  @@index([division])
+  @@map("capacity_snapshots")
+}
+
+model LaborForecast {
+  id                 String   @id @default(uuid())
+  division           Division
+  forecastDate       DateTime @map("forecast_date")
+  weekStarting       DateTime @map("week_starting") @db.Date
+  requiredHours      Int      @map("required_hours")
+  availableHours     Int      @map("available_hours")
+  deficit            Int
+  requiredForemen    Int      @map("required_foremen")
+  requiredJourneymen Int      @map("required_journeymen")
+  requiredApprentices Int     @map("required_apprentices")
+  recommendations    String[]
+  confidence         Int      // 0-100
+  generatedAt        DateTime @default(now()) @map("generated_at")
+
+  @@unique([division, weekStarting])
+  @@index([division])
+  @@index([weekStarting])
+  @@map("labor_forecasts")
+}
+
+// ==========================================
+// INTEGRATION & SYNC
+// ==========================================
+
+model MondaySync {
+  id             String     @id @default(uuid())
+  syncType       SyncType   @map("sync_type")
+  status         SyncStatus
+  projectId      String?    @map("project_id")
+  boardId        String     @map("board_id")
+  itemsProcessed Int        @default(0) @map("items_processed")
+  itemsFailed    Int        @default(0) @map("items_failed")
+  startedAt      DateTime   @default(now()) @map("started_at")
+  completedAt    DateTime?  @map("completed_at")
+  errorLog       String?    @map("error_log") @db.Text
+  triggeredBy    String     @map("triggered_by")
+
+  // Relations
+  project Project? @relation(fields: [projectId], references: [id], onDelete: SetNull)
+  user    User     @relation(fields: [triggeredBy], references: [id])
+
+  @@index([status])
+  @@index([projectId])
+  @@index([startedAt])
+  @@map("monday_syncs")
+}
+
+enum SyncType {
+  MANUAL
+  SCHEDULED
+  WEBHOOK
+}
+
+enum SyncStatus {
+  PENDING
+  IN_PROGRESS
+  COMPLETED
+  FAILED
+  PARTIAL
+}
+
+// ==========================================
+// ALERTS & NOTIFICATIONS
+// ==========================================
+
+model Alert {
+  id           String         @id @default(uuid())
+  type         AlertType
+  severity     AlertSeverity
+  title        String
+  message      String         @db.Text
+  projectId    String?        @map("project_id")
+  phaseId      String?        @map("phase_id")
+  userId       String?        @map("user_id")
+  triggerValue Float?         @map("trigger_value")
+  threshold    Float?
+  isRead       Boolean        @default(false) @map("is_read")
+  isResolved   Boolean        @default(false) @map("is_resolved")
+  createdAt    DateTime       @default(now()) @map("created_at")
+  resolvedAt   DateTime?      @map("resolved_at")
+  resolvedBy   String?        @map("resolved_by")
+
+  // Relations
+  project  Project?      @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  phase    ProjectPhase? @relation(fields: [phaseId], references: [id], onDelete: Cascade)
+  user     User?         @relation("UserAlerts", fields: [userId], references: [id])
+  resolver User?         @relation("AlertResolver", fields: [resolvedBy], references: [id])
+
+  @@index([type])
+  @@index([severity])
+  @@index([isResolved])
+  @@index([createdAt])
+  @@index([projectId])
+  @@index([userId])
+  @@map("alerts")
+}
+
+enum AlertType {
+  SCHEDULE_CONFLICT
+  CAPACITY_WARNING
+  CASH_FLOW_ISSUE
+  PROJECT_DELAY
+  SYNC_FAILURE
+  MISSING_FOREMAN
+  OVER_BUDGET
+}
+
+enum AlertSeverity {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+// ==========================================
+// AUDIT & HISTORY
+// ==========================================
+
+model AuditLog {
+  id         String       @id @default(uuid())
+  entityType String       @map("entity_type")
+  entityId   String       @map("entity_id")
+  action     AuditAction
+  userId     String       @map("user_id")
+  changes    Json
+  ipAddress  String       @map("ip_address")
+  userAgent  String       @map("user_agent")
+  timestamp  DateTime     @default(now())
+
+  // Relations
+  user User @relation(fields: [userId], references: [id])
+
+  @@index([entityType, entityId])
+  @@index([userId])
+  @@index([timestamp])
+  @@map("audit_logs")
+}
+
+enum AuditAction {
+  CREATE
+  UPDATE
+  DELETE
+  SYNC
+  EXPORT
+  LOGIN
+}
