@@ -1,169 +1,290 @@
+'use client';
+
+import React from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+  ArrowRight,
+  BarChart3,
+  Users,
+  DollarSign,
+  Calendar,
+  TrendingUp,
+  Shield,
+  Clock,
+  CheckCircle,
+  Zap,
+  Building2,
+  Briefcase,
+  Activity
+} from 'lucide-react';
 
 export default function Home() {
+  const stats = [
+    { label: 'Active Projects', value: '24', change: '+12%', icon: <Briefcase className="h-5 w-5" /> },
+    { label: 'Team Members', value: '48', change: '+5%', icon: <Users className="h-5 w-5" /> },
+    { label: 'Utilization Rate', value: '87%', change: '+3%', icon: <Activity className="h-5 w-5" /> },
+    { label: 'Revenue YTD', value: '$2.4M', change: '+18%', icon: <DollarSign className="h-5 w-5" /> }
+  ];
+
+  const features = [
+    {
+      title: 'Project Management',
+      description: 'Track projects from quote to completion with real-time status updates',
+      icon: <Briefcase className="h-6 w-6" />,
+      href: '/projects',
+      color: 'bg-blue-100 text-blue-700'
+    },
+    {
+      title: 'Capacity Planning',
+      description: 'Optimize workforce allocation and prevent scheduling conflicts',
+      icon: <Users className="h-6 w-6" />,
+      href: '/capacity',
+      color: 'bg-green-100 text-green-700'
+    },
+    {
+      title: 'Financial Dashboard',
+      description: 'Monitor cash flow, billing schedules, and financial projections',
+      icon: <DollarSign className="h-6 w-6" />,
+      href: '/financial',
+      color: 'bg-purple-100 text-purple-700'
+    },
+    {
+      title: 'Performance Metrics',
+      description: 'Track KPIs and analyze business performance in real-time',
+      icon: <BarChart3 className="h-6 w-6" />,
+      href: '/metrics',
+      color: 'bg-orange-100 text-orange-700'
+    },
+    {
+      title: 'Employee Management',
+      description: 'Manage certifications, availability, and performance',
+      icon: <Shield className="h-6 w-6" />,
+      href: '/employees',
+      color: 'bg-red-100 text-red-700'
+    },
+    {
+      title: 'Reports & Analytics',
+      description: 'Generate comprehensive reports for informed decision-making',
+      icon: <TrendingUp className="h-6 w-6" />,
+      href: '/reports',
+      color: 'bg-indigo-100 text-indigo-700'
+    }
+  ];
+
+  const quickActions = [
+    { label: 'View Active Projects', href: '/projects', icon: <Briefcase className="h-4 w-4" /> },
+    { label: 'Check Capacity', href: '/capacity', icon: <Clock className="h-4 w-4" /> },
+    { label: 'Review Assignments', href: '/assignments', icon: <Calendar className="h-4 w-4" /> },
+    { label: 'Financial Overview', href: '/financial', icon: <DollarSign className="h-4 w-4" /> }
+  ];
+
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="max-w-7xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
-        <div className="text-center">
-          <h1 className="text-4xl font-bold text-gray-900 mb-4">
-            Paris Mechanical Capacity Management
-          </h1>
-          <p className="text-xl text-gray-600 mb-8">
-            Integrated capacity planning and cash flow forecasting platform
-          </p>
-        </div>
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
+      {/* Hero Section */}
+      <div className="relative overflow-hidden bg-gradient-to-br from-blue-600 to-blue-800">
+        <div className="absolute inset-0 bg-grid-white/10"></div>
+        <div className="relative container mx-auto px-6 py-16 pb-24">
+          <div className="max-w-4xl mx-auto">
+            <div className="flex items-center justify-between mb-12">
+              <div className="flex-1">
+                <Image
+                  src="/paris-mechanical-logo.png"
+                  alt="Paris Mechanical"
+                  width={280}
+                  height={120}
+                  className="mb-8"
+                  priority
+                />
+                <h1 className="text-5xl font-bold text-white mb-6">
+                  Capacity Management System
+                </h1>
+                <p className="text-xl text-white/90 mb-8 leading-relaxed max-w-2xl">
+                  Streamline operations, optimize workforce allocation, and maximize profitability
+                  with our comprehensive capacity management platform.
+                </p>
+                <div className="flex gap-4">
+                  <Link href="/dashboard">
+                    <Button size="lg" className="bg-white text-blue-600 hover:bg-gray-100">
+                      Go to Dashboard
+                      <ArrowRight className="ml-2 h-5 w-5" />
+                    </Button>
+                  </Link>
+                  <Link href="/projects">
+                    <Button size="lg" variant="outline" className="text-white border-white hover:bg-white/10">
+                      View Projects
+                    </Button>
+                  </Link>
+                </div>
+              </div>
+            </div>
 
-        <div className="mt-12 grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-3">
-          {/* Projects Card */}
-          <Link href="/projects" className="group">
-            <div className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow">
-              <div className="flex items-center mb-4">
-                <svg className="h-8 w-8 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-                </svg>
-                <h2 className="ml-3 text-xl font-semibold text-gray-900 group-hover:text-blue-600">
-                  Projects
-                </h2>
-              </div>
-              <p className="text-gray-600">
-                Manage projects, track status, and monitor progress across all divisions
-              </p>
-              <div className="mt-4 flex justify-between text-sm">
-                <span className="text-gray-500">Active: 12</span>
-                <span className="text-blue-600">View all →</span>
-              </div>
-            </div>
-          </Link>
-
-          {/* Employees Card */}
-          <Link href="/employees" className="group">
-            <div className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow">
-              <div className="flex items-center mb-4">
-                <svg className="h-8 w-8 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
-                </svg>
-                <h2 className="ml-3 text-xl font-semibold text-gray-900 group-hover:text-blue-600">
-                  Employees
-                </h2>
-              </div>
-              <p className="text-gray-600">
-                Manage workforce, track availability, and monitor utilization rates
-              </p>
-              <div className="mt-4 flex justify-between text-sm">
-                <span className="text-gray-500">Total: 45</span>
-                <span className="text-blue-600">Manage →</span>
-              </div>
-            </div>
-          </Link>
-
-          {/* Capacity Planning Card */}
-          <Link href="/capacity" className="group">
-            <div className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow">
-              <div className="flex items-center mb-4">
-                <svg className="h-8 w-8 text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-                </svg>
-                <h2 className="ml-3 text-xl font-semibold text-gray-900 group-hover:text-blue-600">
-                  Capacity Planning
-                </h2>
-              </div>
-              <p className="text-gray-600">
-                Analyze capacity, forecast labor needs, and optimize crew assignments
-              </p>
-              <div className="mt-4 flex justify-between text-sm">
-                <span className="text-gray-500">Utilization: 78%</span>
-                <span className="text-blue-600">Analyze →</span>
-              </div>
-            </div>
-          </Link>
-
-          {/* Assignments Card */}
-          <Link href="/assignments" className="group">
-            <div className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow">
-              <div className="flex items-center mb-4">
-                <svg className="h-8 w-8 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                </svg>
-                <h2 className="ml-3 text-xl font-semibold text-gray-900 group-hover:text-blue-600">
-                  Crew Assignments
-                </h2>
-              </div>
-              <p className="text-gray-600">
-                Schedule crews, track hours, and manage daily assignments
-              </p>
-              <div className="mt-4 flex justify-between text-sm">
-                <span className="text-gray-500">This week: 125</span>
-                <span className="text-blue-600">Schedule →</span>
-              </div>
-            </div>
-          </Link>
-
-          {/* Financial Card */}
-          <Link href="/financials" className="group">
-            <div className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow">
-              <div className="flex items-center mb-4">
-                <svg className="h-8 w-8 text-yellow-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-                <h2 className="ml-3 text-xl font-semibold text-gray-900 group-hover:text-blue-600">
-                  Financials
-                </h2>
-              </div>
-              <p className="text-gray-600">
-                Track project costs, monitor cash flow, and analyze profitability
-              </p>
-              <div className="mt-4 flex justify-between text-sm">
-                <span className="text-gray-500">YTD Revenue: $2.4M</span>
-                <span className="text-blue-600">View →</span>
-              </div>
-            </div>
-          </Link>
-
-          {/* Reports Card */}
-          <Link href="/reports" className="group">
-            <div className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow">
-              <div className="flex items-center mb-4">
-                <svg className="h-8 w-8 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 17v1a1 1 0 001 1h4a1 1 0 001-1v-1m3-2V8a2 2 0 00-2-2H8a2 2 0 00-2 2v8m5 0h2m1 0h3m-10 0h-3m4-13v2.5" />
-                </svg>
-                <h2 className="ml-3 text-xl font-semibold text-gray-900 group-hover:text-blue-600">
-                  Reports
-                </h2>
-              </div>
-              <p className="text-gray-600">
-                Generate detailed reports and export data for analysis
-              </p>
-              <div className="mt-4 flex justify-between text-sm">
-                <span className="text-gray-500">Latest: Today</span>
-                <span className="text-blue-600">Generate →</span>
-              </div>
-            </div>
-          </Link>
-        </div>
-
-        {/* Quick Stats */}
-        <div className="mt-12 bg-white rounded-lg shadow-md p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">System Overview</h3>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <div className="text-center">
-              <p className="text-2xl font-bold text-blue-600">12</p>
-              <p className="text-sm text-gray-600">Active Projects</p>
-            </div>
-            <div className="text-center">
-              <p className="text-2xl font-bold text-green-600">45</p>
-              <p className="text-sm text-gray-600">Employees</p>
-            </div>
-            <div className="text-center">
-              <p className="text-2xl font-bold text-purple-600">78%</p>
-              <p className="text-sm text-gray-600">Utilization</p>
-            </div>
-            <div className="text-center">
-              <p className="text-2xl font-bold text-orange-600">3</p>
-              <p className="text-sm text-gray-600">Alerts</p>
+            {/* Stats Section - Now inside hero */}
+            <div className="mt-12 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+              {stats.map((stat, index) => (
+                <Card key={index} className="shadow-lg bg-white/95 backdrop-blur">
+                  <CardContent className="p-6">
+                    <div className="flex items-center justify-between mb-4">
+                      <div className="p-2 bg-blue-100 rounded-lg">
+                        {stat.icon}
+                      </div>
+                      <span className="text-sm text-green-600 font-medium">{stat.change}</span>
+                    </div>
+                    <p className="text-3xl font-bold text-gray-900">{stat.value}</p>
+                    <p className="text-sm text-gray-600 mt-1">{stat.label}</p>
+                  </CardContent>
+                </Card>
+              ))}
             </div>
           </div>
         </div>
       </div>
+
+      {/* Features Grid */}
+      <div className="container mx-auto px-6 py-20">
+        <div className="text-center mb-12">
+          <h2 className="text-3xl font-bold text-gray-900 mb-4">
+            Everything You Need to Manage Operations
+          </h2>
+          <p className="text-lg text-gray-600 max-w-2xl mx-auto">
+            Comprehensive tools designed specifically for mechanical contractors to optimize
+            capacity, manage projects, and drive growth.
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {features.map((feature, index) => (
+            <Link key={index} href={feature.href}>
+              <Card className="h-full hover:shadow-xl transition-shadow cursor-pointer group">
+                <CardHeader>
+                  <div className={`inline-flex p-3 rounded-lg ${feature.color} mb-4 group-hover:scale-110 transition-transform`}>
+                    {feature.icon}
+                  </div>
+                  <CardTitle className="text-xl">{feature.title}</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-gray-600">{feature.description}</p>
+                  <div className="mt-4 flex items-center text-blue-600 font-medium">
+                    Learn more
+                    <ArrowRight className="ml-1 h-4 w-4 group-hover:translate-x-1 transition-transform" />
+                  </div>
+                </CardContent>
+              </Card>
+            </Link>
+          ))}
+        </div>
+      </div>
+
+      {/* Quick Actions */}
+      <div className="bg-gray-900 text-white">
+        <div className="container mx-auto px-6 py-16">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+            <div>
+              <h2 className="text-3xl font-bold mb-6">Quick Actions</h2>
+              <p className="text-gray-400 mb-8">
+                Access frequently used features and stay on top of your operations with
+                these quick shortcuts.
+              </p>
+              <div className="space-y-3">
+                {quickActions.map((action, index) => (
+                  <Link key={index} href={action.href}>
+                    <Button
+                      variant="outline"
+                      className="w-full justify-start text-white border-gray-700 hover:bg-gray-800"
+                    >
+                      {action.icon}
+                      <span className="ml-3">{action.label}</span>
+                      <ArrowRight className="ml-auto h-4 w-4" />
+                    </Button>
+                  </Link>
+                ))}
+              </div>
+            </div>
+            <div className="bg-gray-800 rounded-2xl p-8">
+              <h3 className="text-xl font-semibold mb-6">System Benefits</h3>
+              <div className="space-y-4">
+                <div className="flex items-start gap-3">
+                  <CheckCircle className="h-5 w-5 text-green-500 mt-1 flex-shrink-0" />
+                  <div>
+                    <p className="font-medium">30% Increase in Utilization</p>
+                    <p className="text-sm text-gray-400">Optimize workforce allocation</p>
+                  </div>
+                </div>
+                <div className="flex items-start gap-3">
+                  <CheckCircle className="h-5 w-5 text-green-500 mt-1 flex-shrink-0" />
+                  <div>
+                    <p className="font-medium">50% Reduction in Conflicts</p>
+                    <p className="text-sm text-gray-400">Prevent double-booking and overallocation</p>
+                  </div>
+                </div>
+                <div className="flex items-start gap-3">
+                  <CheckCircle className="h-5 w-5 text-green-500 mt-1 flex-shrink-0" />
+                  <div>
+                    <p className="font-medium">Real-time Insights</p>
+                    <p className="text-sm text-gray-400">Make data-driven decisions instantly</p>
+                  </div>
+                </div>
+                <div className="flex items-start gap-3">
+                  <Zap className="h-5 w-5 text-yellow-500 mt-1 flex-shrink-0" />
+                  <div>
+                    <p className="font-medium">Automated Reporting</p>
+                    <p className="text-sm text-gray-400">Save hours on manual report generation</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Footer */}
+      <footer className="bg-white border-t">
+        <div className="container mx-auto px-6 py-12">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+            <div>
+              <div className="flex items-center gap-2 mb-4">
+                <Building2 className="h-6 w-6 text-blue-600" />
+                <span className="font-semibold text-gray-900">PPH Capacity Manager</span>
+              </div>
+              <p className="text-sm text-gray-600">
+                Optimizing mechanical contractor operations since 2024.
+              </p>
+            </div>
+            <div>
+              <h4 className="font-semibold text-gray-900 mb-3">Features</h4>
+              <ul className="space-y-2 text-sm text-gray-600">
+                <li><Link href="/projects" className="hover:text-blue-600">Projects</Link></li>
+                <li><Link href="/capacity" className="hover:text-blue-600">Capacity Planning</Link></li>
+                <li><Link href="/financial" className="hover:text-blue-600">Financial</Link></li>
+                <li><Link href="/reports" className="hover:text-blue-600">Reports</Link></li>
+              </ul>
+            </div>
+            <div>
+              <h4 className="font-semibold text-gray-900 mb-3">Resources</h4>
+              <ul className="space-y-2 text-sm text-gray-600">
+                <li><a href="#" className="hover:text-blue-600">Documentation</a></li>
+                <li><a href="#" className="hover:text-blue-600">API Reference</a></li>
+                <li><a href="#" className="hover:text-blue-600">Support</a></li>
+                <li><a href="#" className="hover:text-blue-600">Training</a></li>
+              </ul>
+            </div>
+            <div>
+              <h4 className="font-semibold text-gray-900 mb-3">Company</h4>
+              <ul className="space-y-2 text-sm text-gray-600">
+                <li><a href="#" className="hover:text-blue-600">About Us</a></li>
+                <li><a href="#" className="hover:text-blue-600">Contact</a></li>
+                <li><a href="#" className="hover:text-blue-600">Privacy Policy</a></li>
+                <li><a href="#" className="hover:text-blue-600">Terms of Service</a></li>
+              </ul>
+            </div>
+          </div>
+          <div className="border-t mt-8 pt-8 text-center text-sm text-gray-600">
+            © 2024 Paris Plumbing & Heating. All rights reserved.
+          </div>
+        </div>
+      </footer>
     </div>
   );
 }

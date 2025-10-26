@@ -40,15 +40,33 @@ export default function Dashboard() {
           </div>
         </div>
 
-        <div className="mt-8 p-4 bg-blue-50 rounded-lg">
-          <h3 className="font-semibold mb-2">PRP-003 Status</h3>
-          <ul className="text-sm space-y-1">
-            <li>✅ Auth0 SDK configured</li>
-            <li>✅ RBAC system implemented</li>
-            <li>✅ Auth middleware created</li>
-            <li>✅ Protected routes working</li>
-            <li>✅ User profile endpoint</li>
-          </ul>
+        <div className="mt-8 grid grid-cols-1 lg:grid-cols-2 gap-4">
+          <div className="p-4 bg-blue-50 rounded-lg">
+            <h3 className="font-semibold mb-2">PRP-003 Status</h3>
+            <ul className="text-sm space-y-1">
+              <li>✅ Auth0 SDK configured</li>
+              <li>✅ RBAC system implemented</li>
+              <li>✅ Auth middleware created</li>
+              <li>✅ Protected routes working</li>
+              <li>✅ User profile endpoint</li>
+            </ul>
+          </div>
+
+          <div className="p-4 bg-green-50 rounded-lg">
+            <h3 className="font-semibold mb-2">Capacity Management</h3>
+            <ul className="text-sm space-y-1">
+              <li>✅ Capacity Overview Dashboard</li>
+              <li>✅ Project Gantt Chart</li>
+              <li>✅ Resource Heatmap</li>
+              <li>✅ Real-time Utilization Tracking</li>
+            </ul>
+            <a
+              href="/capacity"
+              className="inline-block mt-3 px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 transition-colors"
+            >
+              Open Capacity Dashboard
+            </a>
+          </div>
         </div>
       </div>
     </main>

@@ -29,15 +29,17 @@ model User {
   isActive       Boolean    @default(true) @map("is_active")
 
   // Relations
-  createdProjects  Project[]        @relation("ProjectCreator")
-  modifiedProjects Project[]        @relation("ProjectModifier")
-  alerts           Alert[]          @relation("UserAlerts")
-  resolvedAlerts   Alert[]          @relation("AlertResolver")
-  auditLogs        AuditLog[]
-  assignments      CrewAssignment[] @relation("AssignmentCreator")
-  expenses         ProjectExpense[] @relation("ExpenseCreator")
-  approvedExpenses ProjectExpense[] @relation("ExpenseApprover")
-  syncJobs         MondaySync[]
+  createdProjects         Project[]                @relation("ProjectCreator")
+  modifiedProjects        Project[]                @relation("ProjectModifier")
+  alerts                  Alert[]                  @relation("UserAlerts")
+  resolvedAlerts          Alert[]                  @relation("AlertResolver")
+  auditLogs               AuditLog[]
+  assignments             CrewAssignment[]         @relation("AssignmentCreator")
+  expenses                ProjectExpense[]         @relation("ExpenseCreator")
+  approvedExpenses        ProjectExpense[]         @relation("ExpenseApprover")
+  syncJobs                MondaySync[]
+  notifications           Notification[]           @relation("UserNotifications")
+  notificationPreferences NotificationPreference?  @relation("UserNotificationPreferences")
 
   @@index([email])
   @@index([auth0Id])
@@ -479,4 +481,214 @@ enum AuditAction {
   SYNC
   EXPORT
   LOGIN
+}
+
+// ==========================================
+// NOTIFICATIONS SYSTEM
+// ==========================================
+
+model Notification {
+  id               String             @id @default(uuid())
+  userId           String             @map("user_id")
+  type             NotificationType
+  channel          NotificationChannel
+  priority         NotificationPriority @default(NORMAL)
+  title            String
+  message          String             @db.Text
+  data             Json?              // Additional context data
+  templateId       String?            @map("template_id")
+  templateVars     Json?              @map("template_vars")
+
+  // Status tracking
+  status           NotificationStatus @default(PENDING)
+  isRead           Boolean            @default(false) @map("is_read")
+  readAt           DateTime?          @map("read_at")
+  sentAt           DateTime?          @map("sent_at")
+  deliveredAt      DateTime?          @map("delivered_at")
+  failedAt         DateTime?          @map("failed_at")
+  errorMessage     String?            @map("error_message") @db.Text
+  retryCount       Int                @default(0) @map("retry_count")
+
+  // Related entities
+  projectId        String?            @map("project_id")
+  phaseId          String?            @map("phase_id")
+  alertId          String?            @map("alert_id")
+
+  // Metadata
+  actionUrl        String?            @map("action_url")
+  actionLabel      String?            @map("action_label")
+  expiresAt        DateTime?          @map("expires_at")
+  createdAt        DateTime           @default(now()) @map("created_at")
+  updatedAt        DateTime           @updatedAt @map("updated_at")
+
+  // Relations
+  user             User               @relation("UserNotifications", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([status])
+  @@index([type])
+  @@index([channel])
+  @@index([isRead])
+  @@index([createdAt])
+  @@index([priority, status])
+  @@map("notifications")
+}
+
+model NotificationPreference {
+  id                    String              @id @default(uuid())
+  userId                String              @unique @map("user_id")
+
+  // Channel preferences
+  emailEnabled          Boolean             @default(true) @map("email_enabled")
+  inAppEnabled          Boolean             @default(true) @map("in_app_enabled")
+  pushEnabled           Boolean             @default(false) @map("push_enabled")
+  smsEnabled            Boolean             @default(false) @map("sms_enabled")
+
+  // Type preferences (what to receive notifications for)
+  alertNotifications    Boolean             @default(true) @map("alert_notifications")
+  projectUpdates        Boolean             @default(true) @map("project_updates")
+  phaseUpdates          Boolean             @default(true) @map("phase_updates")
+  assignmentChanges     Boolean             @default(true) @map("assignment_changes")
+  scheduleConflicts     Boolean             @default(true) @map("schedule_conflicts")
+  capacityWarnings      Boolean             @default(true) @map("capacity_warnings")
+  cashFlowAlerts        Boolean             @default(true) @map("cash_flow_alerts")
+  mondaySync            Boolean             @default(false) @map("monday_sync")
+  weeklyDigest          Boolean             @default(true) @map("weekly_digest")
+
+  // Frequency settings
+  digestFrequency       DigestFrequency     @default(WEEKLY) @map("digest_frequency")
+  quietHoursStart       Int?                @map("quiet_hours_start") // Hour 0-23
+  quietHoursEnd         Int?                @map("quiet_hours_end")   // Hour 0-23
+  quietHoursEnabled     Boolean             @default(false) @map("quiet_hours_enabled")
+
+  // Advanced settings
+  minimumPriority       NotificationPriority @default(NORMAL) @map("minimum_priority")
+  batchNotifications    Boolean             @default(false) @map("batch_notifications")
+  batchWindowMinutes    Int                 @default(15) @map("batch_window_minutes")
+
+  createdAt             DateTime            @default(now()) @map("created_at")
+  updatedAt             DateTime            @updatedAt @map("updated_at")
+
+  // Relations
+  user                  User                @relation("UserNotificationPreferences", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("notification_preferences")
+}
+
+model NotificationHistory {
+  id                String              @id @default(uuid())
+  notificationId    String              @map("notification_id")
+  userId            String              @map("user_id")
+  channel           NotificationChannel
+  status            NotificationStatus
+  attemptNumber     Int                 @map("attempt_number")
+  sentAt            DateTime?           @map("sent_at")
+  deliveredAt       DateTime?           @map("delivered_at")
+  failedAt          DateTime?           @map("failed_at")
+  errorMessage      String?             @map("error_message") @db.Text
+  provider          String?             // e.g., 'sendgrid', 'firebase', 'twilio'
+  providerId        String?             @map("provider_id") // External ID from provider
+  metadata          Json?               // Additional tracking data
+  createdAt         DateTime            @default(now()) @map("created_at")
+
+  @@index([notificationId])
+  @@index([userId])
+  @@index([channel])
+  @@index([status])
+  @@index([createdAt])
+  @@map("notification_history")
+}
+
+model NotificationTemplate {
+  id                String              @id @default(uuid())
+  name              String              @unique
+  type              NotificationType
+  channel           NotificationChannel
+  subject           String?             // For email
+  bodyTemplate      String              @map("body_template") @db.Text
+  htmlTemplate      String?             @map("html_template") @db.Text
+  variables         String[]            // List of required variables
+  language          String              @default("en")
+  isActive          Boolean             @default(true) @map("is_active")
+  description       String?             @db.Text
+  createdAt         DateTime            @default(now()) @map("created_at")
+  updatedAt         DateTime            @updatedAt @map("updated_at")
+
+  @@index([type])
+  @@index([channel])
+  @@index([isActive])
+  @@map("notification_templates")
+}
+
+model NotificationQueue {
+  id                String              @id @default(uuid())
+  notificationId    String              @map("notification_id")
+  priority          NotificationPriority
+  scheduledFor      DateTime            @map("scheduled_for")
+  processedAt       DateTime?           @map("processed_at")
+  status            QueueStatus         @default(PENDING)
+  attemptCount      Int                 @default(0) @map("attempt_count")
+  maxAttempts       Int                 @default(3) @map("max_attempts")
+  nextRetryAt       DateTime?           @map("next_retry_at")
+  errorLog          String?             @map("error_log") @db.Text
+  createdAt         DateTime            @default(now()) @map("created_at")
+
+  @@index([status])
+  @@index([priority])
+  @@index([scheduledFor])
+  @@index([nextRetryAt])
+  @@map("notification_queue")
+}
+
+enum NotificationType {
+  ALERT
+  PROJECT_UPDATE
+  PHASE_UPDATE
+  ASSIGNMENT_CHANGE
+  SCHEDULE_CONFLICT
+  CAPACITY_WARNING
+  CASH_FLOW_ALERT
+  MONDAY_SYNC
+  SYSTEM_MESSAGE
+  WEEKLY_DIGEST
+  REMINDER
+}
+
+enum NotificationChannel {
+  EMAIL
+  IN_APP
+  PUSH
+  SMS
+}
+
+enum NotificationPriority {
+  LOW
+  NORMAL
+  HIGH
+  URGENT
+}
+
+enum NotificationStatus {
+  PENDING
+  QUEUED
+  SENDING
+  SENT
+  DELIVERED
+  FAILED
+  CANCELLED
+}
+
+enum QueueStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+  CANCELLED
+}
+
+enum DigestFrequency {
+  DAILY
+  WEEKLY
+  MONTHLY
+  NEVER
 }

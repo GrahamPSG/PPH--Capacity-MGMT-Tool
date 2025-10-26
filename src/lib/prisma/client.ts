@@ -50,4 +50,4 @@ process.on('beforeExit', async () => {
 });
 
 export default prisma;
-export { connect, disconnect };
+export { connect, disconnect, prisma };

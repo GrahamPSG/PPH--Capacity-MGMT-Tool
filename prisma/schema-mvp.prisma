@@ -1,0 +1,82 @@
+// MINIMAL MVP SCHEMA - Capacity Management Only
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Core Models Only
+
+model Project {
+  id             String        @id @default(uuid())
+  projectCode    String        @unique
+  name           String
+  type           ProjectType
+  division       Division
+  contractAmount Decimal       @db.Decimal(12, 2)
+  startDate      DateTime
+  endDate        DateTime
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+
+  phases         Phase[]
+
+  @@map("projects")
+}
+
+model Phase {
+  id             String    @id @default(uuid())
+  projectId      String
+  phaseName      String
+  phaseNumber    Int
+  startDate      DateTime
+  endDate        DateTime
+  crewSize       Int       @default(0)
+  needsForeman   Boolean   @default(true)
+  journeymen     Int       @default(0)
+  apprentices    Int       @default(0)
+
+  project        Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@unique([projectId, phaseNumber])
+  @@map("phases")
+}
+
+model Employee {
+  id             String       @id @default(uuid())
+  employeeCode   String       @unique
+  firstName      String
+  lastName       String
+  division       Division
+  role           EmployeeRole
+  isActive       Boolean      @default(true)
+
+  @@map("employees")
+}
+
+// Simplified Enums
+
+enum Division {
+  PLUMBING_MULTIFAMILY
+  PLUMBING_COMMERCIAL
+  PLUMBING_CUSTOM
+  HVAC_MULTIFAMILY
+  HVAC_COMMERCIAL
+  HVAC_CUSTOM
+}
+
+enum ProjectType {
+  MULTIFAMILY
+  COMMERCIAL
+  CUSTOM_HOME
+}
+
+enum EmployeeRole {
+  FOREMAN
+  JOURNEYMAN
+  APPRENTICE
+}
