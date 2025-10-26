@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { createProjectSchema, CreateProjectInput } from '@/services/projects/ProjectValidator';
@@ -12,7 +12,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Loader2 } from 'lucide-react';
+import { Loader2, AlertCircle, CheckCircle } from 'lucide-react';
 
 interface ProjectFormProps {
   onSubmit: (data: CreateProjectInput) => Promise<void>;
@@ -22,12 +22,16 @@ interface ProjectFormProps {
 }
 
 export function ProjectForm({ onSubmit, initialData, isLoading = false, mode = 'create' }: ProjectFormProps) {
+  const [submitError, setSubmitError] = useState<string | null>(null);
+  const [submitSuccess, setSubmitSuccess] = useState(false);
+
   const {
     register,
     handleSubmit,
     formState: { errors, isSubmitting },
     setValue,
-    watch
+    watch,
+    reset
   } = useForm<CreateProjectInput>({
     resolver: zodResolver(createProjectSchema),
     defaultValues: {
@@ -41,10 +45,30 @@ export function ProjectForm({ onSubmit, initialData, isLoading = false, mode = '
   const projectType = watch('type');
 
   const handleFormSubmit = async (data: CreateProjectInput) => {
+    setSubmitError(null);
+    setSubmitSuccess(false);
+
     try {
       await onSubmit(data);
+      setSubmitSuccess(true);
+
+      // Reset form if in create mode
+      if (mode === 'create') {
+        reset();
+        // Clear success message after 3 seconds
+        setTimeout(() => setSubmitSuccess(false), 3000);
+      }
     } catch (error) {
+      const message = error instanceof Error
+        ? error.message
+        : 'An unexpected error occurred. Please try again.';
+      setSubmitError(message);
+
+      // Log error for debugging
       console.error('Form submission error:', error);
+
+      // Scroll to top to show error message
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     }
   };
 
@@ -54,6 +78,38 @@ export function ProjectForm({ onSubmit, initialData, isLoading = false, mode = '
         <CardTitle>{mode === 'create' ? 'Create New Project' : 'Edit Project'}</CardTitle>
       </CardHeader>
       <CardContent>
+        {/* Error Alert */}
+        {submitError && (
+          <Alert variant="destructive" className="mb-6">
+            <div className="flex items-start justify-between">
+              <div className="flex">
+                <AlertCircle className="h-4 w-4 mr-2" />
+                <AlertDescription>{submitError}</AlertDescription>
+              </div>
+              <button
+                type="button"
+                onClick={() => setSubmitError(null)}
+                className="ml-4 text-sm hover:text-red-800"
+                aria-label="Dismiss error"
+              >
+                ×
+              </button>
+            </div>
+          </Alert>
+        )}
+
+        {/* Success Alert */}
+        {submitSuccess && (
+          <Alert className="mb-6 border-green-200 bg-green-50">
+            <CheckCircle className="h-4 w-4 text-green-600" />
+            <AlertDescription className="text-green-800">
+              {mode === 'create'
+                ? 'Project created successfully!'
+                : 'Project updated successfully!'}
+            </AlertDescription>
+          </Alert>
+        )}
+
         <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-6">
           {/* Project Details */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

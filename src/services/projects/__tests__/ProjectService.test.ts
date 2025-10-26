@@ -2,13 +2,9 @@
  * @jest-environment node
  */
 
-import { ProjectService } from '../ProjectService';
-import { ProjectStatus, ProjectType, Division, UserRole } from '@prisma/client';
-import { prisma } from '@/lib/prisma';
-
-// Mock Prisma
-jest.mock('@/lib/prisma', () => ({
-  prisma: {
+// Mock Prisma - must be defined before imports
+jest.mock('@/lib/prisma/client', () => {
+  const mockPrisma = {
     project: {
       create: jest.fn(),
       findUnique: jest.fn(),
@@ -24,9 +20,22 @@ jest.mock('@/lib/prisma', () => ({
     alert: {
       create: jest.fn(),
     },
-    $transaction: jest.fn((callback) => callback(prisma)),
-  },
-}));
+    $transaction: jest.fn((callback: any) => callback(mockPrisma)),
+  };
+
+  return {
+    __esModule: true,
+    default: mockPrisma,
+    prisma: mockPrisma,
+  };
+});
+
+import { ProjectService } from '../ProjectService';
+import { ProjectStatus, ProjectType, Division, UserRole } from '@prisma/client';
+import prisma from '@/lib/prisma/client';
+
+// Get the mocked prisma for use in tests
+const mockPrisma = prisma as any;
 
 describe('ProjectService', () => {
   const mockUser = {
@@ -43,8 +52,8 @@ describe('ProjectService', () => {
     division: Division.PLUMBING_COMMERCIAL,
     status: ProjectStatus.QUOTED,
     contractAmount: 150000,
-    startDate: '2024-01-01T00:00:00Z',
-    endDate: '2024-06-30T00:00:00Z',
+    startDate: new Date('2024-01-01T00:00:00Z'),
+    endDate: new Date('2024-06-30T00:00:00Z'),
     clientName: 'Test Client',
     clientContact: '555-1234',
     crewSize: 5,
@@ -68,13 +77,13 @@ describe('ProjectService', () => {
         updatedAt: new Date(),
       };
 
-      (prisma.project.findFirst as jest.Mock).mockResolvedValue(null);
-      (prisma.project.create as jest.Mock).mockResolvedValue(mockCreatedProject);
+      (mockPrisma.project.findFirst as jest.Mock).mockResolvedValue(null);
+      (mockPrisma.project.create as jest.Mock).mockResolvedValue(mockCreatedProject);
 
       const result = await ProjectService.createProject(mockProjectData, mockUser.id);
 
       expect(result).toEqual(mockCreatedProject);
-      expect(prisma.project.create).toHaveBeenCalledWith({
+      expect(mockPrisma.project.create).toHaveBeenCalledWith({
         data: expect.objectContaining({
           projectCode: 'PRJ-001',
           name: mockProjectData.name,
@@ -92,8 +101,8 @@ describe('ProjectService', () => {
         projectCode: 'PRJ-005',
       };
 
-      (prisma.project.findFirst as jest.Mock).mockResolvedValue(existingProject);
-      (prisma.project.create as jest.Mock).mockResolvedValue({
+      (mockPrisma.project.findFirst as jest.Mock).mockResolvedValue(existingProject);
+      (mockPrisma.project.create as jest.Mock).mockResolvedValue({
         id: 'project-124',
         projectCode: 'PRJ-006',
         ...mockProjectData,
@@ -137,13 +146,13 @@ describe('ProjectService', () => {
         updatedAt: new Date(),
       };
 
-      (prisma.project.findUnique as jest.Mock).mockResolvedValue(existingProject);
-      (prisma.project.update as jest.Mock).mockResolvedValue(updatedProject);
+      (mockPrisma.project.findUnique as jest.Mock).mockResolvedValue(existingProject);
+      (mockPrisma.project.update as jest.Mock).mockResolvedValue(updatedProject);
 
       const result = await ProjectService.updateProject(projectId, updates, mockUser.id);
 
       expect(result).toEqual(updatedProject);
-      expect(prisma.project.update).toHaveBeenCalledWith({
+      expect(mockPrisma.project.update).toHaveBeenCalledWith({
         where: { id: projectId },
         data: expect.objectContaining({
           ...updates,
@@ -154,7 +163,7 @@ describe('ProjectService', () => {
     });
 
     it('should throw error if project not found', async () => {
-      (prisma.project.findUnique as jest.Mock).mockResolvedValue(null);
+      (mockPrisma.project.findUnique as jest.Mock).mockResolvedValue(null);
 
       await expect(ProjectService.updateProject('invalid-id', {}, mockUser.id))
         .rejects
@@ -172,12 +181,12 @@ describe('ProjectService', () => {
         _count: { phases: 0 },
       };
 
-      (prisma.project.findUnique as jest.Mock).mockResolvedValue(mockProject);
+      (mockPrisma.project.findUnique as jest.Mock).mockResolvedValue(mockProject);
 
       const result = await ProjectService.getProjectById('project-123');
 
       expect(result).toEqual(mockProject);
-      expect(prisma.project.findUnique).toHaveBeenCalledWith({
+      expect(mockPrisma.project.findUnique).toHaveBeenCalledWith({
         where: { id: 'project-123' },
         include: expect.objectContaining({
           foreman: true,
@@ -190,7 +199,7 @@ describe('ProjectService', () => {
     });
 
     it('should return null for non-existent project', async () => {
-      (prisma.project.findUnique as jest.Mock).mockResolvedValue(null);
+      (mockPrisma.project.findUnique as jest.Mock).mockResolvedValue(null);
 
       const result = await ProjectService.getProjectById('invalid-id');
 
@@ -210,14 +219,14 @@ describe('ProjectService', () => {
         { id: 'project-2', ...mockProjectData },
       ];
 
-      (prisma.project.findMany as jest.Mock).mockResolvedValue(mockProjects);
-      (prisma.project.count as jest.Mock).mockResolvedValue(2);
+      (mockPrisma.project.findMany as jest.Mock).mockResolvedValue(mockProjects);
+      (mockPrisma.project.count as jest.Mock).mockResolvedValue(2);
 
       const result = await ProjectService.getProjects(filters);
 
       expect(result.projects).toEqual(mockProjects);
       expect(result.total).toBe(2);
-      expect(prisma.project.findMany).toHaveBeenCalledWith({
+      expect(mockPrisma.project.findMany).toHaveBeenCalledWith({
         where: {
           status: filters.status,
           division: filters.division,
@@ -234,12 +243,12 @@ describe('ProjectService', () => {
         search: 'test',
       };
 
-      (prisma.project.findMany as jest.Mock).mockResolvedValue([]);
-      (prisma.project.count as jest.Mock).mockResolvedValue(0);
+      (mockPrisma.project.findMany as jest.Mock).mockResolvedValue([]);
+      (mockPrisma.project.count as jest.Mock).mockResolvedValue(0);
 
       await ProjectService.getProjects(filters);
 
-      expect(prisma.project.findMany).toHaveBeenCalledWith({
+      expect(mockPrisma.project.findMany).toHaveBeenCalledWith({
         where: {
           OR: [
             { name: { contains: 'test', mode: 'insensitive' } },
@@ -264,13 +273,13 @@ describe('ProjectService', () => {
         status: ProjectStatus.QUOTED,
       };
 
-      (prisma.project.findUnique as jest.Mock).mockResolvedValue(mockProject);
-      (prisma.project.delete as jest.Mock).mockResolvedValue(mockProject);
+      (mockPrisma.project.findUnique as jest.Mock).mockResolvedValue(mockProject);
+      (mockPrisma.project.delete as jest.Mock).mockResolvedValue(mockProject);
 
       const result = await ProjectService.deleteProject(projectId, mockUser.id);
 
       expect(result).toBe(true);
-      expect(prisma.project.delete).toHaveBeenCalledWith({
+      expect(mockPrisma.project.delete).toHaveBeenCalledWith({
         where: { id: projectId },
       });
     });
@@ -281,7 +290,7 @@ describe('ProjectService', () => {
         status: ProjectStatus.IN_PROGRESS,
       };
 
-      (prisma.project.findUnique as jest.Mock).mockResolvedValue(mockProject);
+      (mockPrisma.project.findUnique as jest.Mock).mockResolvedValue(mockProject);
 
       await expect(ProjectService.deleteProject('project-123', mockUser.id))
         .rejects
@@ -297,12 +306,12 @@ describe('ProjectService', () => {
         { status: ProjectStatus.QUOTED, _count: 3 },
       ];
 
-      (prisma.project.count as jest.Mock)
+      (mockPrisma.project.count as jest.Mock)
         .mockResolvedValueOnce(18) // total
         .mockResolvedValueOnce(5) // active
         .mockResolvedValueOnce(10); // completed
 
-      (prisma.project.findMany as jest.Mock).mockImplementation(() => {
+      (mockPrisma.project.findMany as jest.Mock).mockImplementation(() => {
         return Promise.resolve(mockStats);
       });
 

@@ -1,7 +1,8 @@
 import { z } from 'zod';
 import { ProjectType, ProjectStatus, Division } from '@prisma/client';
 
-const ProjectCreateSchema = z.object({
+// Export the create schema
+export const createProjectSchema = z.object({
   name: z.string().min(1).max(200),
   type: z.nativeEnum(ProjectType),
   division: z.nativeEnum(Division),
@@ -32,7 +33,8 @@ const ProjectCreateSchema = z.object({
   path: ['actualEndDate']
 });
 
-const ProjectUpdateSchema = z.object({
+// Export the update schema
+export const updateProjectSchema = z.object({
   name: z.string().min(1).max(200).optional(),
   type: z.nativeEnum(ProjectType).optional(),
   division: z.nativeEnum(Division).optional(),
@@ -50,6 +52,36 @@ const ProjectUpdateSchema = z.object({
   mondayItemId: z.string().nullable().optional(),
   notes: z.string().max(5000).nullable().optional()
 });
+
+// Export status update schema
+export const updateStatusSchema = z.object({
+  status: z.nativeEnum(ProjectStatus),
+  reason: z.string().min(1).max(500).optional(),
+  effectiveDate: z.date().optional()
+});
+
+// Export filter schema
+export const projectFilterSchema = z.object({
+  status: z.nativeEnum(ProjectStatus).optional(),
+  division: z.nativeEnum(Division).optional(),
+  type: z.nativeEnum(ProjectType).optional(),
+  foremanId: z.string().uuid().optional(),
+  startDate: z.date().optional(),
+  endDate: z.date().optional(),
+  search: z.string().optional(),
+  page: z.number().int().positive().default(1),
+  limit: z.number().int().positive().max(100).default(50)
+});
+
+// Export types
+export type CreateProjectInput = z.infer<typeof createProjectSchema>;
+export type UpdateProjectInput = z.infer<typeof updateProjectSchema>;
+export type UpdateStatusInput = z.infer<typeof updateStatusSchema>;
+export type ProjectFilterInput = z.infer<typeof projectFilterSchema>;
+
+// Keep internal references for validator class
+const ProjectCreateSchema = createProjectSchema;
+const ProjectUpdateSchema = updateProjectSchema;
 
 export class ProjectValidator {
   static validateCreate(data: any) {
